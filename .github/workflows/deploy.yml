@@ -1,0 +1,43 @@
+name: Deploy Evidence Site
+
+on:
+  push:
+    branches: [ main ]         # 1. 只要有代码推送（Commit）就运行
+  schedule:
+    - cron: '0 0 * * *'        # 2. 每天北京时间早上 8:00 自动运行（UTC 00:00）
+  workflow_dispatch:           # 3. 允许你在网页上手动点击按钮运行
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      
+      - run: npm install
+      - run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'build'
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
