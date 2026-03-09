@@ -2,10 +2,8 @@ name: Deploy Evidence Site
 
 on:
   push:
-    branches: [ main ]         # 1. 每次代码推送或上传 CSV 时运行
-  schedule:
-    - cron: '0 0 * * *'        # 2. 每天北京时间早上 8:00 自动运行
-  workflow_dispatch:           # 3. 允许你在网页上手动点击 "Run workflow"
+    branches: [ main ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,29 +15,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
       
-      - name: Install dependencies
-        run: npm install
+      - run: npm install
+      - run: npm run sources 
       
-      - name: Extract Data Sources
-        run: npm run sources 
-      
-      # 【核心补丁区】修复 404 错误和下划线文件夹屏蔽
-      - name: Build and bypass Jekyll
+      # 这里是关键：强制注入 base 路径，并解决下划线文件夹被 GitHub 屏蔽的问题
+      - name: Build with Fixed Base Path
         run: |
           npm run build
+          # 这一行解决所有的 404 权限问题
           touch build/.nojekyll
         env:
-          # 告诉 Evidence 你的网页是在子路径 /myEvidenceFiles 下运行的
+          # 必须同时设置这两个变量，确保 Vite 插件和 Evidence 核心同时感知路径
           EVIDENCE_SITE_URL: "https://edwardwoodhub.github.io/myEvidenceFiles"
-          # 如果你的项目使用较新版本的 Evidence，可能还需要这个变量
-          VITE_SVELTEKIT_ADAPTER_STATIC_FALLBACK: "404.html"
+          BASE_PATH: "/myEvidenceFiles"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
