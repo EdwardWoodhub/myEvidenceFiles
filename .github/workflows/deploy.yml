@@ -28,27 +28,37 @@ jobs:
       - name: Extract Sources
         run: npm run sources 
       
-      - name: Build and Surgical Path Fix
+      - name: Build and Global Path Fix
         run: |
-          # 1. 正常执行构建
+          # 1. 执行构建
           npm run build
           
-          # 2. 【核心手术】强制修正路径：将 / 替换为 /myEvidenceFiles/
-          # 修正 HTML 中的资源引用
-          find build -type f -name "*.html" -exec sed -i 's|src="/|src="/myEvidenceFiles/|g' {} +
-          find build -type f -name "*.html" -exec sed -i 's|href="/|href="/myEvidenceFiles/|g' {} +
-          
-          # 修正 JS 中的动态路径引用 (处理 _app 文件夹)
-          find build -type f -name "*.js" -exec sed -i 's|/_app/|/myEvidenceFiles/_app/|g' {} +
-          
-          # 3. 修正数据路径 (处理 /data 文件夹，解决 Loading 问题)
-          find build -type f -name "*.js" -exec sed -i 's|/data/|/myEvidenceFiles/data/|g' {} +
+          # 2. 【全量物理手术】
+          # 定义目标：所有 HTML, JS, CSS, JSON, Webmanifest 文件
+          TARGET_FILES='\( -name "*.html" -o -name "*.js" -o -name "*.css" -o -name "*.json" -o -name "*.webmanifest" \)'
+          SUB_PATH="/myEvidenceFiles"
 
-          # 4. 解除 GitHub Pages 的下划线屏蔽 (极其重要)
+          # 强制替换所有核心文件夹的绝对引用
+          # 这一步能解决 99% 的 404 错误，包括 JS 内部的动态导入和 CSS 里的字体
+          find build -type f $TARGET_FILES -exec sed -i "s|/_app/|$SUB_PATH/_app/|g" {} +
+          find build -type f $TARGET_FILES -exec sed -i "s|/data/|$SUB_PATH/data/|g" {} +
+          
+          # 修正特定的 HTML 属性（处理图片 src="/, 链接 href="/, 以及 Favicon）
+          # 注意：这里用了带引号的匹配，避免误伤普通的文本内容
+          find build -type f -name "*.html" -exec sed -i "s|src=\"/|src=\"$SUB_PATH/|g" {} +
+          find build -type f -name "*.html" -exec sed -i "s|href=\"/|href=\"$SUB_PATH/|g" {} +
+          
+          # 修正一些散落在各处的单点路径
+          find build -type f $TARGET_FILES -exec sed -i "s|/manifest.webmanifest|$SUB_PATH/manifest.webmanifest|g" {} +
+          find build -type f $TARGET_FILES -exec sed -i "s|/favicon.ico|$SUB_PATH/favicon.ico|g" {} +
+
+          # 3. 解决 GitHub Pages 的下划线屏蔽 (一定要有)
           touch build/.nojekyll
           
-          echo "--- 路径修正手术完成 ---"
-          grep -o 'src="/myEvidenceFiles/[^"]*"' build/index.html | head -n 3
+          echo "--- 全量物理路径修正完成 ---"
+          # 验证：检查是否还有直接指向根目录的 _app 引用
+          echo "检查首页中的残留路径（应该为空）："
+          grep -o 'src="/_app/' build/index.html || echo "✅ 没发现残留根路径"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
