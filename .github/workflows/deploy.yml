@@ -15,42 +15,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
       
-      - run: npm install
-      - run: npm run sources 
+      - name: Install & Source
+        run: |
+          npm install
+          npm run sources
       
-      - name: Build and Precision Path Fix
+      - name: Build and Relativize
         run: |
           # 1. 执行标准构建
           npm run build
           
-          # 2. 【核心手术】精准、不重复地修正路径
-          REPO_NAME="myEvidenceFiles"
+          # 2. 【核心手术】将所有绝对路径降级为相对路径
+          # 这样浏览器就会在当前目录下寻找 _app 和 data 文件夹
+          # 我们只针对 src="/ 和 href="/ 这种标准的 HTML 属性进行操作
+          find build -type f -name "*.html" -exec sed -i 's|src="/|src="./|g' {} +
+          find build -type f -name "*.html" -exec sed -i 's|href="/|href="./|g' {} +
           
-          echo "正在执行路径对齐手术..."
+          # 3. 【精准修复 JS】让 JS 内部的动态导入也变成相对路径
+          # 我们把 "/_app/" 替换为 "./_app/"，把 "/data/" 替换为 "./data/"
+          find build -type f -name "*.js" -exec sed -i 's|"/_app/|"./_app/|g' {} +
+          find build -type f -name "*.js" -exec sed -i 's|"/data/|"./data/|g' {} +
 
-          # 修正 JS/HTML/CSS 里的核心资源路径
-          # 我们匹配 "/_app/"，并确保它前面没有重复的仓库名
-          find build -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) -exec sed -i "s|\"/_app/|\"/$REPO_NAME/_app/|g" {} +
-          find build -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) -exec sed -i "s|\"/data/|\"/$REPO_NAME/data/|g" {} +
-          
-          # 修正 HTML 里的 src/href 属性 (只替换以 / 开头的绝对路径)
-          find build -type f -name "*.html" -exec sed -i "s|href=\"/|href=\"/$REPO_NAME/|g" {} +
-          find build -type f -name "*.html" -exec sed -i "s|src=\"/|src=\"/$REPO_NAME/|g" {} +
-
-          # 3. 【解决字体 404】修正 CSS 里的字体 url 引用
-          find build -type f -name "*.css" -exec sed -i "s|url(/|url(/$REPO_NAME/|g" {} +
-
-          # 4. 【关键通行证】创建 .nojekyll，强制 GitHub 开放 _app 文件夹
+          # 4. 【解决下划线屏蔽】
+          # 如果没有这个文件，GitHub 绝对不会让你访问 _app 文件夹
           touch build/.nojekyll
           
-          echo "修正完成。验证路径："
-          grep -o "/$REPO_NAME/_app/" build/index.html | head -n 1
+          echo "--- 相对路径转换完成 ---"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
