@@ -24,36 +24,22 @@ jobs:
       - run: npm install
       - run: npm run sources 
       
-      - name: Build and Precision Path Fix
+      - name: Build and Relative Path Hack
         run: |
-          # 1. 执行构建
           npm run build
           
-          # 2. 【核心手术】只针对特定关键词进行替换，避免“套娃”
-          # 这一组命令涵盖了所有的 JS, CSS, HTML, 和 Manifest 文件
-          # 我们不再匹配 src="/，而是匹配 /_app/ 这种唯一的标识符
+          # 1. 进入构建目录
+          cd build
           
-          # 定义目标文件和子路径
-          SUB="/myEvidenceFiles"
-          FILES=$(find build -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" -o -name "*.webmanifest" \))
-
-          for f in $FILES; do
-            # 修正 _app 路径 (所有的 JS, CSS 资源)
-            sed -i "s|/_app/|$SUB/_app/|g" "$f"
-            # 修正 data 路径 (所有的图表数据)
-            sed -i "s|/data/|$SUB/data/|g" "$f"
-            # 修正 manifest 路径
-            sed -i "s|/manifest.webmanifest|$SUB/manifest.webmanifest|g" "$f"
-            # 修正 favicon 路径
-            sed -i "s|/favicon.ico|$SUB/favicon.ico|g" "$f"
-            # 修正图片和文字链接 (匹配引号后的反斜杠)
-            sed -i "s|\"/\([^/]\)|\"$SUB/\1|g" "$f"
-          done
-
-          # 3. 解决 GitHub Pages 的下划线屏蔽
-          touch build/.nojekyll
+          # 2. 手术：把所有以 " / " 开头的引用，全部改为 " ./ " (变成相对路径)
+          # 这是最暴力的解法，但能完美配合你的“挪文件夹”逻辑
+          find . -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) -exec sed -i 's|src="/|src="./|g' {} +
+          find . -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) -exec sed -i 's|href="/|href="./|g' {} +
           
-          echo "--- 路径精准修正完成 ---"
+          # 3. 补上通行证
+          touch .nojekyll
+          
+          echo "--- 相对路径转换完成 ---"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
