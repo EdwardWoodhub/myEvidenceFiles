@@ -21,34 +21,48 @@ jobs:
           node-version: 22
           cache: 'npm'
       
-      - name: Install & Source
-        run: |
-          npm install
-          npm run sources
+      - run: npm install
+      - run: npm run sources 
       
-      - name: Build and Relativize Paths
+      - name: Build and Surgical Path Alignment
         run: |
           # 1. 执行标准构建
           npm run build
           
-          # 2. 【核心手术】把绝对路径改为相对路径
-          # 这样浏览器就会在当前目录下寻找 _app 和 data 文件夹
-          find build -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) -exec sed -i 's|src="/|src="|g' {} +
-          find build -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) -exec sed -i 's|href="/|href="|g' {} +
+          # 2. 定义变量
+          REPO_NAME="myEvidenceFiles"
           
-          # 特别针对 JS 内部的动态导入 (将 "/_app/" 替换为 "_app/")
-          find build -type f -name "*.js" -exec sed -i 's|"/_app/|"_app/|g' {} +
-          find build -type f -name "*.js" -exec sed -i 's|"/data/|"data/|g' {} +
+          # 3. 【核心补丁】使用精准匹配，避免重复添加前缀
+          # 我们针对 HTML, JS, CSS 里的三个核心特征进行替换
+          # 只替换那些以 / 开头，但后面不是仓库名的路径
           
-          # 3. 加上通行证
+          echo "开始修正路径..."
+          
+          # 修正 _app 路径 (核心 JS 和 CSS)
+          find build -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) -exec sed -i "s|/_app/|/$REPO_NAME/_app/|g" {} +
+          
+          # 修正 data 路径 (图表数据)
+          find build -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) -exec sed -i "s|/data/|/$REPO_NAME/data/|g" {} +
+          
+          # 修正 Manifest、Favicon 和特定图片
+          find build -type f -name "*.html" -exec sed -i "s|href=\"/|href=\"/$REPO_NAME/|g" {} +
+          find build -type f -name "*.html" -exec sed -i "s|src=\"/|src=\"/$REPO_NAME/|g" {} +
+          
+          # 4. 【关键补丁】修正 CSS 里的字体引用 (解决 Inter 404)
+          # CSS 内部通常是 url(/_app/...)
+          find build -type f -name "*.css" -exec sed -i "s|url(/|url(/$REPO_NAME/|g" {} +
+
+          # 5. 【通行证】创建 .nojekyll 
+          # 必须放在 build 根目录，否则 GitHub 会拦截所有下划线文件夹
           touch build/.nojekyll
           
-          echo "--- 相对路径转换完成 ---"
+          echo "修正完成。检查路径示例："
+          grep -o "/$REPO_NAME/_app/" build/index.html | head -n 1
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'build' # 直接上传 build 文件夹，不套娃
+          path: 'build'
 
   deploy:
     needs: build
