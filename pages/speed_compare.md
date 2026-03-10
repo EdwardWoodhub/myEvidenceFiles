@@ -32,30 +32,3 @@ order by m_s
     tooltipTitle="scenario"
 />
 
-```sql speeds
--- 使用 CTE 将宽表转换为长表，这是 ScatterPlot 多线对数图的终极解法
-with unpivoted as (
-    select m_s, km_h as target_speed, 'km/h' as unit, scenario 
-    from speed_things.speed_conversion
-    union all
-    select m_s, mph as target_speed, 'mph' as unit, scenario 
-    from speed_things.speed_conversion
-    union all
-    select m_s, knots as target_speed, 'knots' as unit, scenario 
-    from speed_things.speed_conversion
-)
-select * from unpivoted 
-order by unit, m_s
-```
-
-<ScatterPlot
-    data={speeds}
-    x="m_s"
-    y="target_speed"
-    series="unit"
-    xLog={true}
-    yLog={true}
-    connected={true}
-    markers={true}
-    tooltipTitle="scenario"
-/>
