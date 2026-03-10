@@ -24,8 +24,17 @@ order by m_s
 data={speeds}
 x="m_s"
 y={['km_h', 'mph', 'knots']}
-xLog=true
-yLog=true
-markers=true
+markers={true}
 tooltipTitle="scenario"
+/>
+
+
+<LineChart
+    data={speeds}
+    x="m_s"
+    y={['km_h', 'mph', 'knots']}
+    xLog={true}
+    yLog={true}
+    markers={true}
+    tooltipTitle="scenario"
 />
