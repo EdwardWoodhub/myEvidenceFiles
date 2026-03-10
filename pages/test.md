@@ -31,3 +31,17 @@ order by x_val
     xType=quantitative  xMin=1              yMin=1              markers={true}
     tooltipTitle="scenario"
 />
+
+<ScatterPlot
+    data={speeds_long}
+    x=x_val
+    y=y_val
+    series=unit
+    xLog={true}
+    yLog={true}
+    xMin=1
+    yMin=1
+    connected={true}
+    markers={true}
+    tooltipTitle="scenario"
+/>
