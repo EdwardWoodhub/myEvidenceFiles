@@ -6,7 +6,7 @@ title: 速度单位换算
 
 ---
 
-```sql speeds_data
+```sql speeds
 select 
     cast(m_s as double) as x, 
     cast(km_h as double) as y_kmh, 
