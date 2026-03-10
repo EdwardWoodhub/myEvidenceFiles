@@ -24,13 +24,13 @@ from speed_things.speed_conversion
 order by m_s
 ```
 
-<LineChart
+<ScatterPlot
     data={speeds}
     x="m_s"
     y={['km_h', 'mph', 'knots']}
     xLog={true}
     yLog={true}
-    xType=quantitative
+    connected={true}
     markers={true}
     tooltipTitle="scenario"
 />
