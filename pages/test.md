@@ -6,7 +6,7 @@ title: 速度单位换算
 
 ---
 
-```sql speeds
+```sql speeds_long
 with base as (
     -- 强制转换为双精度浮点数，并统一列名
     select cast(m_s as double) as x_val, cast(km_h as double) as y_val, 'km/h' as unit, scenario from speed_things.speed_conversion
