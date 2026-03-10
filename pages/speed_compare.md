@@ -14,8 +14,12 @@ title: 速度单位换算
 ---
 
 ```sql speeds
--- 注意：FROM 后面必须对应文件夹名和文件名
-select m_s, km_h, mph, knots, scenario 
+select 
+    cast(m_s as float) as m_s, -- 强制转换为浮点数
+    km_h, 
+    mph, 
+    knots, 
+    scenario 
 from speed_things.speed_conversion
 order by m_s
 ```
