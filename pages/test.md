@@ -21,10 +21,15 @@ title: 速度单位换算
 ---
 
 ```sql speeds
--- 注意：FROM 后面必须对应文件夹名和文件名
-select m_s, km_h, mph, knots, scenario 
-from speed_things.speed_conversion
-order by m_s
+-- 通过 UNION 把宽表转成长表，这是让散点图画出多条线的唯一方法
+with long_data as (
+    select m_s, km_h as val, 'km/h' as unit, scenario from speed_things.speed_conversion
+    union all
+    select m_s, mph as val, 'mph' as unit, scenario from speed_things.speed_conversion
+    union all
+    select m_s, knots as val, 'knots' as unit, scenario from speed_things.speed_conversion
+)
+select * from long_data order by m_s
 ```
 
 <LineChart
