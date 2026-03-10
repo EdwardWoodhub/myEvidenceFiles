@@ -26,7 +26,7 @@ order by m_s
     y={['km_h', 'mph', 'knots']}
     xLog={true}
     yLog={true}
+    xType=quantitative
     markers={true}
     tooltipTitle="scenario"
 />
-
