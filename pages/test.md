@@ -7,28 +7,27 @@ title: 速度单位换算
 ---
 
 ```sql speeds
--- 强制转换为数字并排除 0，确保对数轴激活
-with long_data as (
-    select cast(m_s as float) as m_s, km_h as val, 'km/h' as unit, scenario from speed_things.speed_conversion
+with base as (
+    -- 强制转换为双精度浮点数，并统一列名
+    select cast(m_s as double) as x_val, cast(km_h as double) as y_val, 'km/h' as unit, scenario from speed_things.speed_conversion
     union all
-    select cast(m_s as float) as m_s, mph as val, 'mph' as unit, scenario from speed_things.speed_conversion
+    select cast(m_s as double) as x_val, cast(mph as double) as y_val, 'mph' as unit, scenario from speed_things.speed_conversion
     union all
-    select cast(m_s as float) as m_s, knots as val, 'knots' as unit, scenario from speed_things.speed_conversion
+    select cast(m_s as double) as x_val, cast(knots as double) as y_val, 'knots' as unit, scenario from speed_things.speed_conversion
 )
-select * from long_data 
-where m_s > 0 
-order by m_s
+-- 必须排除 0，且必须全局排序
+select * from base 
+where x_val > 0 
+order by x_val
 ```
 
-<ScatterPlot
-    data={speeds}
-    x="m_s"
-    y="val"
-    series="unit"
-    xLog={true}
+<LineChart
+    data={speeds_long}
+    x=x_val
+    y=y_val
+    series=unit
+    xLog={true}         
     yLog={true}
-    xMin=1           xType=quantitative
-    connected={true} markers={true}
+    xType=quantitative  xMin=1              yMin=1              markers={true}
     tooltipTitle="scenario"
 />
-
