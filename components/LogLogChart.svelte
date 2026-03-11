@@ -27,11 +27,11 @@
         },
         legend: { 
             show: showLegend, 
-            bottom: '0%',
+            top: '10%',
             icon: 'circle'
         },
         grid: { 
-            top: '15%', 
+            top: '22%', 
             bottom: '15%', 
             left: '10%',
             right: '10%',
