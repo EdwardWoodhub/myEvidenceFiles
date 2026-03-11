@@ -1,3 +1,7 @@
+---
+title: 自建LogLogChart.svelte展示
+---
+
 # 速度单位换算全景图
 
 ```sql speeds
